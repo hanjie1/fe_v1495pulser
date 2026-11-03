@@ -43,7 +43,10 @@ typedef struct
 /* 0x1028-0x102B */ unsigned int PulserGinMaskH;
 /* 0x102C-0x102F */ unsigned int PulserGinMaskL;
 /* 0x1030-0x1033 */ unsigned int PulserStartStop;
-/* 0x1034-0x10FF */ unsigned int Reserved1[(0x1100-0x1034)/4];
+/* 0x1034-0x1037 */ unsigned int NimTtl;
+/* 0x1038-0x103B */ unsigned int RandPulserFreq;
+/* 0x103C-0x103F */ unsigned int RandPulserWidth;
+/* 0x1040-0x10FF */ unsigned int Reserved1[(0x1100-0x1040)/4];
 /* 0x1100-0x1103 */ unsigned int MasterOrDelay;
 /* 0x1104-0x1107 */ unsigned int MasterOrWidth;
 /* 0x1108-0x1FFF */ unsigned int Reserved2[(0x2000-0x1108)/4];
@@ -75,5 +78,8 @@ void V1495PulserGetCfg(int pulser);
 void V1495PulserSetCfg(int pulser, unsigned int period, unsigned int highcycles, unsigned int npulses);
 void V1495PulserStart(unsigned int maskL, unsigned int maskH);
 void V1495PulserStop(unsigned int maskL, unsigned int maskH);
+void V1495PulserSetRandCfg(unsigned int freq_hz, unsigned int width_cycles);
+void V1495PulserGetRandCfg(unsigned int *pFreq_hz, unsigned int *pWidth_cycles);
+void V1495PulserRandEnable(unsigned int enable, unsigned int freq_hz, unsigned int width_cycles);
 
 #endif

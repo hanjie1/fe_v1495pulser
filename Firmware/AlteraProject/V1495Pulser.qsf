@@ -273,7 +273,7 @@ set_global_assignment -name DEVICE EP1C20F400C6
 set_global_assignment -name TOP_LEVEL_ENTITY V1495Pulser
 set_global_assignment -name ORIGINAL_QUARTUS_VERSION "7.2 SP2"
 set_global_assignment -name PROJECT_CREATION_TIME_DATE "11:20:29  FEBRUARY 27, 2008"
-set_global_assignment -name LAST_QUARTUS_VERSION "13.0 SP1"
+set_global_assignment -name LAST_QUARTUS_VERSION "13.0 SP1.78"
 set_global_assignment -name EDA_SIMULATION_TOOL "Custom VHDL"
 set_global_assignment -name EDA_OUTPUT_DATA_FORMAT VHDL -section_id eda_simulation
 set_global_assignment -name USE_GENERATED_PHYSICAL_CONSTRAINTS OFF -section_id eda_palace
@@ -447,6 +447,7 @@ set_instance_assignment -name CLOCK_SETTINGS LCLK_40 -to LCLK
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
 
 set_global_assignment -name SDC_FILE ../src/V1495Pulser.sdc
+set_global_assignment -name VHDL_FILE ../src/pulser_rand.vhd
 set_global_assignment -name VHDL_FILE ../src/Dpram_4k_1b.vhd
 set_global_assignment -name VHDL_FILE ../src/PLLBlock.vhd
 set_global_assignment -name VHDL_FILE ../src/UserBus32bit.vhd

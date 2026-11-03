@@ -110,6 +110,12 @@ void V1495PulserStatus()
 	                                                     ReadReg32(&pPulser->MasterOrDelay)*PULSER_TICK_PERIOD_NS);
 	printf("   Pulser Master OR Width: 0x%08X (%uns)\n", ReadReg32(&pPulser->MasterOrWidth),
 	                                                     ReadReg32(&pPulser->MasterOrWidth)*PULSER_TICK_PERIOD_NS);
+	printf("   Pulser Random Freq:     0x%08X (%u Hz)%s\n", ReadReg32(&pPulser->RandPulserFreq),
+	                                                        ReadReg32(&pPulser->RandPulserFreq),
+	                                                        ReadReg32(&pPulser->RandPulserFreq) ? "" : " [Disabled]");
+	printf("   Pulser Random Width:    0x%08X (%u cycles, %u ns)\n", ReadReg32(&pPulser->RandPulserWidth),
+	                                                               ReadReg32(&pPulser->RandPulserWidth),
+	                                                               (ReadReg32(&pPulser->RandPulserWidth)+1)*5);
 	printf("   Pulser Jumpers:         0x%08X\n", ReadReg32(&pPulser->Jumpers));
 }
 
@@ -174,5 +180,39 @@ void V1495PulserStop(unsigned int maskL, unsigned int maskH)
 	WriteReg32(&pPulser->PulserStopMaskH, maskH);
 	WriteReg32(&pPulser->PulserStopMaskL, maskL);
 	WriteReg32(&pPulser->PulserStartStop, 0x0);
+}
+
+void V1495PulserSetRandCfg(unsigned int freq_hz, unsigned int width_cycles)
+{
+	WriteReg32(&pPulser->RandPulserFreq, freq_hz & 0x00FFFFFF);
+	WriteReg32(&pPulser->RandPulserWidth, width_cycles & 0xFF);
+}
+
+void V1495PulserGetRandCfg(unsigned int *pFreq_hz, unsigned int *pWidth_cycles)
+{
+	unsigned int freq = ReadReg32(&pPulser->RandPulserFreq);
+	unsigned int width = ReadReg32(&pPulser->RandPulserWidth);
+
+	if(pFreq_hz)
+		*pFreq_hz = freq;
+	if(pWidth_cycles)
+		*pWidth_cycles = width;
+
+	printf("\nV1495PulserGetRandCfg:\n");
+	printf("   Random Frequency = %u Hz (0x%06X)%s\n", freq, freq, freq ? "" : " [Disabled]");
+	printf("   Random Width     = %u cycles (%u ns)\n", width, (width + 1) * 5);
+}
+
+void V1495PulserRandEnable(unsigned int enable, unsigned int freq_hz, unsigned int width_cycles)
+{
+	if(!enable)
+	{
+		WriteReg32(&pPulser->RandPulserFreq, 0);
+	}
+	else
+	{
+		WriteReg32(&pPulser->RandPulserWidth, width_cycles & 0xFF);
+		WriteReg32(&pPulser->RandPulserFreq, freq_hz & 0x00FFFFFF);
+	}
 }
 

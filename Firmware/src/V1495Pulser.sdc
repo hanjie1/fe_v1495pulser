@@ -105,6 +105,14 @@ set_false_path  -from  [get_clocks {PLLBlock_inst|altpll_component|pll|clk[0]}] 
 set_false_path  -from  [get_clocks {LCLK}]  -to  [get_clocks {PLLBlock_inst|altpll_component|pll|clk[0]}]
 set_false_path -from {LCLK} -to {virt_PLLCLK}
 
+# Cut timing path on static frequency calculation multipliers in pulser_rand
+set_false_path -through [get_registers {*pulser_rand*PROD_LOW[*]}]
+set_false_path -through [get_registers {*pulser_rand*PROD_HIGH[*]}]
+set_false_path -from [get_registers {*pulser_rand*FREQ_Q[*]}] -to [get_registers {*pulser_rand*PROD_LOW[*]}]
+set_false_path -from [get_registers {*pulser_rand*FREQ_Q[*]}] -to [get_registers {*pulser_rand*PROD_HIGH[*]}]
+set_false_path -from [get_registers {*pulser_rand*PROD_LOW[*]}] -to [get_registers {*pulser_rand*THRESHOLD[*]}]
+set_false_path -from [get_registers {*pulser_rand*PROD_HIGH[*]}] -to [get_registers {*pulser_rand*THRESHOLD[*]}]
+
 #**************************************************************
 # Set Multicycle Path
 #**************************************************************

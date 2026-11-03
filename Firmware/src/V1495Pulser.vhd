@@ -138,6 +138,16 @@ architecture Synthesis of V1495Pulser is
 			locked		: OUT STD_LOGIC 
 		);
 	end component;
+
+	component pulser_rand is
+		port(
+			RESET        : in  std_logic;
+			PLLCLK       : in  std_logic;
+			FREQ         : in  std_logic_vector(23 downto 0);
+			PULSER_WIDTH : in  std_logic_vector(7 downto 0);
+			OUTPUT       : out std_logic
+		);
+	end component;
 	
 	constant PULSER_NUM					: integer := 56;
 	
@@ -161,6 +171,8 @@ architecture Synthesis of V1495Pulser is
 	constant A_PULSER_GIN_MASK_L		: std_logic_vector(15 downto 0) := x"102C";
 	constant A_PULSER_START_STOP		: std_logic_vector(15 downto 0) := x"1030";
 	constant A_NIMTTL						: std_logic_vector(15 downto 0) := x"1034";
+	constant A_RAND_FREQ					: std_logic_vector(15 downto 0) := x"1038";
+	constant A_RAND_WIDTH				: std_logic_vector(15 downto 0) := x"103C";
 
 
 	signal USER_DOUT_MUX					: slv32_array(58 downto 0);
@@ -204,6 +216,12 @@ architecture Synthesis of V1495Pulser is
 	signal GIN_OR							: std_logic;
 
 	signal NIMTTL_SEL						: std_logic_vector(2 downto 0);
+
+	signal RAND_FREQ						: std_logic_vector(23 downto 0);
+	signal RAND_WIDTH						: std_logic_vector(7 downto 0);
+	signal RAND_OUTPUT					: std_logic;
+	signal RAND_OUT_PIPE					: pulser_array(2 downto 0);
+	signal RAND_OUT_FANOUT				: std_logic_vector(PULSER_NUM-1 downto 0);
 begin
 
 	-------------------------
@@ -301,6 +319,28 @@ begin
 			INPUT		=> MOR_IN,
 			OUTPUT	=> MOR_OUT_F
 		);
+
+	-------------------------
+	-- Random Pulser Section
+	-------------------------
+	pulser_rand_inst: pulser_rand
+		port map(
+			RESET        => SYS_RESET,
+			PLLCLK       => PLLCLK,
+			FREQ         => RAND_FREQ,
+			PULSER_WIDTH => RAND_WIDTH,
+			OUTPUT       => RAND_OUTPUT
+		);
+
+	process(PLLCLK)
+	begin
+		if rising_edge(PLLCLK) then
+			RAND_OUT_PIPE(0) <= (others => RAND_OUTPUT);
+			RAND_OUT_PIPE(1) <= RAND_OUT_PIPE(0);
+			RAND_OUT_PIPE(2) <= RAND_OUT_PIPE(1);
+			RAND_OUT_FANOUT  <= RAND_OUT_PIPE(2);
+		end if;
+	end process;
 	
 	-------------------------
 	-- I/O Mapping Section
@@ -328,35 +368,35 @@ begin
 			PULSER_OR(2) <= or_reduce(PULSER_OUTPUT(41 downto 28));
 			PULSER_OR(3) <= or_reduce(PULSER_OUTPUT(55 downto 42));
 			MOR_IN <= or_reduce(PULSER_OR); 
-			C(31) <= MOR_OUT;
+			C(31) <= MOR_OUT or RAND_OUT_FANOUT(31);
 			
 			-- Pulser Outputs
 			PULSER_OUTPUT_Q <= PULSER_OUTPUT_Q(PULSER_OUTPUT_Q'length-2 downto 0) & PULSER_OUTPUT;
 		end if;
 	end process;
 
-	process(PULSER_OUTPUT, PULSER_OUTPUT_Q, GIN_OR, PULSER_GIN_MASK)
+	process(PULSER_OUTPUT, PULSER_OUTPUT_Q, GIN_OR, PULSER_GIN_MASK, RAND_OUT_FANOUT)
 	begin
-		GOUT(1) <= (PULSER_OUTPUT_Q(PULSER_OUTPUT_Q'length-3)(55) or (GIN_OR and PULSER_GIN_MASK(55)));
+		GOUT(1) <= (PULSER_OUTPUT_Q(PULSER_OUTPUT_Q'length-3)(55) or (GIN_OR and PULSER_GIN_MASK(55))) or RAND_OUT_FANOUT(55);
 		
 		for I in 0 to 30 loop
-			C(I) <= PULSER_OUTPUT_Q(PULSER_OUTPUT_Q'length-1)(I) or (GIN_OR and PULSER_GIN_MASK(I));
+			C(I) <= PULSER_OUTPUT_Q(PULSER_OUTPUT_Q'length-1)(I) or (GIN_OR and PULSER_GIN_MASK(I)) or RAND_OUT_FANOUT(I);
 		end loop;
-		
+
 		for I in 0 to 7 loop
-			D(NIM_IO_MAP(I)) <= (PULSER_OUTPUT_Q(PULSER_OUTPUT_Q'length-1)(31+ 0+I) or (GIN_OR and PULSER_GIN_MASK(31+ 0+I)));
-			E(NIM_IO_MAP(I)) <= (PULSER_OUTPUT_Q(PULSER_OUTPUT_Q'length-1)(31+ 8+I) or (GIN_OR and PULSER_GIN_MASK(31+ 8+I)));
+			D(NIM_IO_MAP(I)) <= (PULSER_OUTPUT_Q(PULSER_OUTPUT_Q'length-1)(31+ 0+I) or (GIN_OR and PULSER_GIN_MASK(31+ 0+I))) or RAND_OUT_FANOUT(31+ 0+I);
+			E(NIM_IO_MAP(I)) <= (PULSER_OUTPUT_Q(PULSER_OUTPUT_Q'length-1)(31+ 8+I) or (GIN_OR and PULSER_GIN_MASK(31+ 8+I))) or RAND_OUT_FANOUT(31+ 8+I);
 		end loop;
 
 		for I in 0 to 6 loop
-			F(NIM_IO_MAP(I)) <= (PULSER_OUTPUT_Q(PULSER_OUTPUT_Q'length-1)(31+16+I) or (GIN_OR and PULSER_GIN_MASK(31+16+I)));
+			F(NIM_IO_MAP(I)) <= (PULSER_OUTPUT_Q(PULSER_OUTPUT_Q'length-1)(31+16+I) or (GIN_OR and PULSER_GIN_MASK(31+16+I))) or RAND_OUT_FANOUT(31+16+I);
 		end loop;
 	end process;
 
 	process(PLLCLK)
 	begin
 		if rising_edge(PLLCLK) then			
-			F(NIM_IO_MAP(7)) <= MOR_OUT_F;
+			F(NIM_IO_MAP(7)) <= MOR_OUT_F or RAND_OUT_FANOUT(55);
 		end if;
 	end process;
 
@@ -403,6 +443,8 @@ begin
 			PULSER_STOP_MASK <= (others=>'1');
 			PULSER_GIN_MASK <= (others=>'0');
 			NIMTTL_SEL <= "011";
+			RAND_FREQ <= (others=>'0');
+			RAND_WIDTH <= (others=>'0');
 		elsif rising_edge(LCLK) then
 			PULSER_START_LCLK <= '0';
 			PULSER_STOP_LCLK <= '0';
@@ -418,18 +460,20 @@ begin
 					when A_PULSER_START_STOP	=> PULSER_START_LCLK <= USER_DIN(0);
 					                              PULSER_STOP_LCLK <= not USER_DIN(0);
 					when A_NIMTTL					=> NIMTTL_SEL <= USER_DIN(2 downto 0);
+					when A_RAND_FREQ				=> RAND_FREQ <= USER_DIN(23 downto 0);
+					when A_RAND_WIDTH				=> RAND_WIDTH <= USER_DIN(7 downto 0);
 					when others 					=> null;
 				end case;
 			end if;
 		end if;
 	end process;
 	
-	process(USER_RD, USER_ADDR, IDF, IDE, IDD, JUMPER, PULSER_STATUS, PULSER_START_MASK, PULSER_STOP_MASK, PULSER_GIN_MASK)
+	process(USER_RD, USER_ADDR, IDF, IDE, IDD, JUMPER, PULSER_STATUS, PULSER_START_MASK, PULSER_STOP_MASK, PULSER_GIN_MASK, NIMTTL_SEL, RAND_FREQ, RAND_WIDTH)
 	begin
 		if USER_RD = '1' then
 			case USER_ADDR is
 				when A_PULSER_ID				=> USER_DOUT_MUX(0) <= x"50554C53";
-				when A_FIRMWARE_REV			=> USER_DOUT_MUX(0) <= x"00010005";
+				when A_FIRMWARE_REV			=> USER_DOUT_MUX(0) <= x"00010006";
 				when A_BOARDID					=> USER_DOUT_MUX(0) <= x"00000" & "0"&IDF & "0"&IDE & "0"&IDD;
 				when A_JUMPERS					=> USER_DOUT_MUX(0) <= x"000000" & "00" & JUMPER;
 				when A_PULSER_STATUS_H		=> USER_DOUT_MUX(0) <= "00000000" & PULSER_STATUS(55 downto 32);
@@ -441,6 +485,8 @@ begin
 				when A_PULSER_GIN_MASK_H	=> USER_DOUT_MUX(0) <= "00000000" & PULSER_GIN_MASK(55 downto 32);
 				when A_PULSER_GIN_MASK_L	=> USER_DOUT_MUX(0) <= PULSER_GIN_MASK(31 downto 0);
 				when A_NIMTTL					=> USER_DOUT_MUX(0) <= x"0000000" & '0' & NIMTTL_SEL(2 downto 0);
+				when A_RAND_FREQ				=> USER_DOUT_MUX(0) <= x"00" & RAND_FREQ;
+				when A_RAND_WIDTH				=> USER_DOUT_MUX(0) <= x"000000" & RAND_WIDTH;
 				when others 					=> USER_DOUT_MUX(0) <= x"00000000";
 			end case;
 		else
