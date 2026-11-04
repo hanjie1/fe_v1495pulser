@@ -17,6 +17,9 @@ LINUXVME_BIN ?= ../../bin
 TARGET := v1495firmware
 SRC := v1495firmware.c v1495.c
 OBJS := $(SRC:.c=.o)
+PULSER_LIB := libv1495pulser.a
+PULSER_SRC := v1495_pulser.c
+PULSER_OBJS := $(PULSER_SRC:.c=.o)
 
 CPPFLAGS := -DLinux_vme -include jvme.h -I. -I$(LINUXVME_INC) $(INC_CODA)
 CFLAGS := -Wall
@@ -31,15 +34,19 @@ endif
 
 DEPDIR := .deps
 DEPFLAGS = -MT $@ -MMD -MP -MF $(DEPDIR)/$*.d
-DEPFILES := $(SRC:%.c=$(DEPDIR)/%.d)
+DEPFILES := $(SRC:%.c=$(DEPDIR)/%.d) $(PULSER_SRC:%.c=$(DEPDIR)/%.d)
 
 .PHONY: all clean install
 
-all: $(TARGET)
+all: $(TARGET) $(PULSER_LIB)
 
 $(TARGET): $(OBJS)
 	@echo " LD     $@"
 	$(Q)$(CC) $(LDFLAGS) -o $@ $(OBJS) $(LDLIBS)
+
+$(PULSER_LIB): $(PULSER_OBJS)
+	@echo " AR     $@"
+	$(Q)$(AR) rcs $@ $(PULSER_OBJS)
 
 %.o: %.c | $(DEPDIR)
 	@echo " CC     $@"
@@ -53,6 +60,6 @@ install: $(TARGET)
 	$(Q)cp $(TARGET) $(LINUXVME_BIN)/
 
 clean:
-	$(Q)rm -f $(TARGET) $(OBJS) $(DEPFILES)
+	$(Q)rm -f $(TARGET) $(OBJS) $(PULSER_OBJS) $(PULSER_LIB) $(DEPFILES)
 
 -include $(wildcard $(DEPFILES))
