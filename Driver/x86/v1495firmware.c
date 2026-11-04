@@ -4,7 +4,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
+#include <limits.h>
 
+#include "jvme.h"
+#include "v1495.h"
 
 #ifdef Linux_vme
 
@@ -13,7 +17,8 @@ main(int argc, char *argv[])
 {
   int res, page = -1, user_vme = -1;
   char myname[256];
-  unsigned int addr, laddr;
+  unsigned int addr;
+  char *laddr;
 
   if(argc==5)
   {
@@ -38,16 +43,21 @@ main(int argc, char *argv[])
   vmeOpenDefaultWindows();
 
   /* get address in A24 space */
-  res = vmeBusToLocalAdrs(0x39,(char *)addr,(char **)&laddr);
+  res = vmeBusToLocalAdrs(0x39, (char *)(uintptr_t)addr, &laddr);
   if (res != 0) 
   {
 	printf("ERROR in vmeBusToLocalAdrs(0x39,0x%x,&laddr) \n",addr);
   }
   else
   {
-    printf("INFO: addr=0x%08x, laddr=0x%08x\n",addr,laddr);
+    printf("INFO: addr=0x%08x, laddr=%p\n", addr, (void *)laddr);
+    if((uintptr_t)laddr > UINT_MAX)
+    {
+      fprintf(stderr, "ERROR: local VME address does not fit in this driver's 32-bit address type\n");
+      exit(1);
+    }
     /* update firmware */
-    v1495firmware(laddr,myname,page,user_vme);
+    v1495firmware((unsigned int)(uintptr_t)laddr, myname, page, user_vme);
   }
 
   exit(0);
