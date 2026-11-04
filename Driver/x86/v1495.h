@@ -32,5 +32,10 @@ typedef struct v1495_struct
 
 #define V1495_BOARD_ID   0x01 /*  */
 
+#ifdef Linux_vme
+#include <stdint.h>
+int v1495firmware(uintptr_t baseaddr, char *filename, int page, int user_vme);
+#else
 int v1495firmware(unsigned int baseaddr, char *filename, int page,
                   int user_vme);
+#endif

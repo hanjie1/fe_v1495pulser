@@ -5,7 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
-#include <limits.h>
 
 #include "jvme.h"
 #include "v1495.h"
@@ -51,13 +50,8 @@ main(int argc, char *argv[])
   else
   {
     printf("INFO: addr=0x%08x, laddr=%p\n", addr, (void *)laddr);
-    if((uintptr_t)laddr > UINT_MAX)
-    {
-      fprintf(stderr, "ERROR: local VME address does not fit in this driver's 32-bit address type\n");
-      exit(1);
-    }
     /* update firmware */
-    v1495firmware((unsigned int)(uintptr_t)laddr, myname, page, user_vme);
+    v1495firmware((uintptr_t)laddr, myname, page, user_vme);
   }
 
   exit(0);

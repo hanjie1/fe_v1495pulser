@@ -83,7 +83,7 @@ Adjustment for Motorola VME controllers: Sergey Boyarinov April 23 2007
         =1 for VME flash
 ****************************************************************************/
 int
-write_flash_page1(unsigned int addr, unsigned char *page, int pagenum, int flag)
+write_flash_page1(uintptr_t addr, unsigned char *page, int pagenum, int flag)
 {
   volatile V1495 *v1495 = (V1495 *) addr;
   int i, flash_addr;
@@ -168,7 +168,7 @@ write_flash_page1(unsigned int addr, unsigned char *page, int pagenum, int flag)
  read_flash_page
 ****************************************************************************/
 int
-read_flash_page1(unsigned int addr, unsigned char *page, int pagenum, int flag)
+read_flash_page1(uintptr_t addr, unsigned char *page, int pagenum, int flag)
 {
   volatile V1495 *v1495 = (V1495 *) addr;
   int i, flash_addr;
@@ -268,7 +268,7 @@ read_flash_page1(unsigned int addr, unsigned char *page, int pagenum, int flag)
 
 *****************************************************************************/
 int
-v1495firmware(unsigned int baseaddr, char *filename, int page, int user_vme)
+v1495firmware(uintptr_t baseaddr, char *filename, int page, int user_vme)
 {
   unsigned short *reload = (unsigned short *) (baseaddr+0x8016);
   int finish,i;
