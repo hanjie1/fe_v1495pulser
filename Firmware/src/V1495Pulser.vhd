@@ -346,7 +346,7 @@ begin
 	-- I/O Mapping Section
 	-------------------------
 	
-	GOUT(0) <= '0';	-- Output NIM Logic '0' (no current) to allow use of GIN(0)
+	GOUT(0) <= RAND_OUTPUT;	-- Random pulser output on NIM port G0
 	GIN_OR <= not GIN(0);
 	
 	nOED <= '0';	-- Output
@@ -533,4 +533,3 @@ begin
 	SPARE(11) <= 'Z';
 		
 end Synthesis;
-   
